@@ -1,0 +1,4 @@
+tests_manual.py    # ručne provere — nije pytest, samo print/assert
+Kasnije dodaješ analysis.py i visualization.py — oni ne diraju ništa od gore
+IMPLEMENTIRATI RK 4
+IMPLEMENTIRATI VERLET
