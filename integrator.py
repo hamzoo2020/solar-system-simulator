@@ -45,5 +45,8 @@ class Verlet:
         self.prev_accel = None
 
     def step(self, system, dt):
-        #cisto da ne bude greska pisem ovu liniju
-        bodies = system
+        self.prev_accel = system.accelerations()
+        new_positions = system.positions + system.velocities*dt + (1/2)*self.prev_accel*dt**2
+        new_accelerations = system.accelerations(new_positions)
+        new_velocities = system.velocities + (self.prev_accel + new_accelerations)/2 * dt
+        return System(system.bodies, new_positions, new_velocities)
