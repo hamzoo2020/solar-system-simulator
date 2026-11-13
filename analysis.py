@@ -1,5 +1,6 @@
 import numpy as np
 from constants import *
+import matplotlib.pyplot as plt
 
 def total_energy(system):
     Ek = 0.0
@@ -23,4 +24,20 @@ def run(system, method, dt, n_steps):
         current = method.step(current, dt)
         energies.append(total_energy(current))
     return times, energies
+
+def plot_total_energy(times, energies, name):
+    x = times
+    y = [energy/energies[0] for energy in energies]
+    c = ''
+    if name == "Euler": c = 'r'
+    elif name == "RK4": c = 'b'
+    elif name == "Verlet": c = 'g'
+    plt.plot(x, y, c, label = name)
+    plt.title(f"Graph of deviation of energy over time")
+    plt.xlabel("t")
+    plt.ylabel("E[t]/E[0]")
+    plt.legend()
+    plt.grid(True)
+
+
 
