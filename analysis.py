@@ -148,6 +148,40 @@ def plot_differentiation_error(system, method, dt, n_steps):
     plt.grid(True)
     plt.show()
 
+def plot_error_vs_h(system, method, dt_list, n_steps):
+    error_acc_mean = []
+    error_vel_mean = []
+
+    for dt in dt_list:
+        err_vel, err_acc = differentiation_error(system, method, dt, n_steps)
+        error_acc_mean.append(np.mean(err_acc))
+        error_vel_mean.append(np.mean(err_vel))
+
+    for name, errors in [("velocity", error_vel_mean), ("acceleration", error_acc_mean)]:
+        try:
+            k = np.polyfit(np.log(dt_list), np.log(errors), 1)[0]
+            print(f"  nagib ({name}) = {k:.3f}")
+        except Exception:
+            pass
+
+    plt.loglog(dt_list, error_vel_mean, 'r', label = "Velocity error")
+    plt.xlabel("h = dt[s]")
+    plt.ylabel("Velocity error[m/s]")
+    plt.title("Error vs h")
+    plt.grid(True)
+    plt.legend()
+    plt.show()
+
+    plt.loglog(dt_list, error_acc_mean, 'r', label = "Acceleration error")
+    plt.xlabel("h = dt[s]")
+    plt.ylabel("Acceleration error[m/s^2]")
+    plt.title("Error vs h")
+    plt.grid(True)
+    plt.legend()
+    plt.show()
+
+
+
 
 
 

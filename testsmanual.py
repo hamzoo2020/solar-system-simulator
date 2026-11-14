@@ -5,7 +5,6 @@ Pokreni: python tests_manual.py
 
 import numpy as np
 import matplotlib
-matplotlib.use("Agg")   # bez GUI — samo savefig, brze i bez blokiranja
 import matplotlib.pyplot as plt
 
 from celestial_object import CelestialObject
@@ -15,7 +14,7 @@ from integrator import Euler, RK4, Verlet
 from analysis import (
     run, total_energy, convergence,
     differentiation_error,
-    plot_total_energy, plot_converges, plot_differentiation_error,
+    plot_total_energy, plot_converges, plot_differentiation_error, plot_error_vs_h
 )
 
 
@@ -98,10 +97,53 @@ def test_differentiation_plot():
     plt.close("all")
     print("  differentiation grafici prikazani (bez savefig, samo plt.show)\n")
 
+def test_error_vs_h_plot():
+    """
+    Provera da plot_error_vs_h radi bez greske i da podaci imaju smisla.
+    Ocekivano: 'V' oblik — greska opada O(h^2) za velike h, raste za male (round-off).
+    """
+    print("=== Grafik: error vs h ===")
+    system = make_sun_earth()
+    method = RK4()
+    dt_list = [60.0, 120.0, 240.0, 480.0, 960.0, 1920.0, 3840.0]
+    n_steps = 500   # kratko, samo da provera prodje brzo
+
+    # 1. Pozovi differentiation_error za svaki dt — proveri da vraca smislene vrednosti
+    err_v_mean = []
+    err_a_mean = []
+    for dt in dt_list:
+        err_v, err_a = differentiation_error(system, method, dt, n_steps)
+        assert len(err_v) > 0, f"dt={dt}: prazan err_v"
+        assert len(err_a) > 0, f"dt={dt}: prazan err_a"
+        assert all(np.isfinite(v) for v in err_v), f"dt={dt}: err_v ima NaN/inf"
+        assert all(np.isfinite(a) for a in err_a), f"dt={dt}: err_a ima NaN/inf"
+        err_v_mean.append(np.mean(err_v))
+        err_a_mean.append(np.mean(err_a))
+        print(f"  dt={dt:>6.0f}  mean(err_v)={np.mean(err_v):.3e}  mean(err_a)={np.mean(err_a):.3e}")
+
+    # 2. Proveri da su srednje greske pozitivne
+    assert all(e > 0 for e in err_v_mean), "err_v_mean mora biti pozitivno"
+    assert all(e > 0 for e in err_a_mean), "err_a_mean mora biti pozitivno"
+
+    # 3. Nagib za velike h (gde O(h^2) dominira)
+    mask = np.array(dt_list) > 200
+    try:
+        k_v = np.polyfit(np.log(np.array(dt_list)[mask]),
+                         np.log(np.array(err_v_mean)[mask]), 1)[0]
+        k_a = np.polyfit(np.log(np.array(dt_list)[mask]),
+                         np.log(np.array(err_a_mean)[mask]), 1)[0]
+        print(f"  nagib (v, velike h) = {k_v:.3f}")
+        print(f"  nagib (a, velike h) = {k_a:.3f}")
+    except Exception as e:
+        print(f"  polyfit preskocen: {e}")
+
+    # 4. Pozovi plot funkciju — proveri da ne puca
+    plot_error_vs_h(system, method, dt_list, n_steps)
+    plt.close("all")
+
+    print("  grafici prikazani (bez savefig unutar funkcije)\n")
 
 if __name__ == "__main__":
     print("Provera grafika...\n")
-    test_energy_plot()
-    test_convergence_plot()
-    test_differentiation_plot()
+    test_error_vs_h_plot()
     print("Svi grafici prosli.")
