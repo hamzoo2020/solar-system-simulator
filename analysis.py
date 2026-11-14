@@ -78,9 +78,78 @@ def plot_converges(series):
     plt.title(f"Graph of convergence")
     plt.xlabel("dt[s]")
     plt.ylabel("Error[m]")
+    plt.grid(True)
     plt.legend()
-    plt.savefig("convergence.png", dpi=150, bbox_inches="tight")
     plt.show()
+
+def numerical_velocity(system, method, dt, n_steps):
+    positions_list = []
+    current = system
+    for i in range(n_steps):
+        current = method.step(current, dt)
+        positions_list.append(current.positions)
+    velocities = []
+    for i in range(1, n_steps - 1):
+        velocities.append((positions_list[i + 1] - positions_list[i - 1]) / (2*dt))
+    return velocities
+
+def numerical_acceleration(system, method, dt, n_steps):
+    positions_list = []
+    current = system
+    for i in range(n_steps):
+        current = method.step(current, dt)
+        positions_list.append(current.positions)
+    accelerations = []
+    for i in range(1, n_steps - 1):
+        accelerations.append((positions_list[i + 1] - 2*positions_list[i] + positions_list[i - 1]) / dt**2)
+    return accelerations
+
+def differentiation_error(system, method, dt, n_steps):
+    int_vel = []
+    int_pos = []
+    current = system
+    for i in range(n_steps):
+        current = method.step(current, dt)
+        int_vel.append(current.velocities.copy())
+        int_pos.append(current.positions.copy())
+
+    err_vel = []
+    err_acc = []
+    for i in range(1, n_steps - 1):
+        v_int_i = int_vel[i]                    
+        a_int_i = system.accelerations(int_pos[i])
+
+        vel_num = (int_pos[i+1] - int_pos[i-1]) / (2*dt)
+        acc_num = (int_pos[i+1] - 2*int_pos[i] + int_pos[i-1]) / dt**2
+
+        vn = np.linalg.norm(v_int_i - vel_num)
+        an = np.linalg.norm(a_int_i - acc_num)
+        err_vel.append(vn)
+        err_acc.append(an)
+    return err_vel, err_acc
+
+def plot_differentiation_error(system, method, dt, n_steps):
+    err_vel, err_acc = differentiation_error(system, method, dt, n_steps)
+
+    x = [dt*i for i in range(1, n_steps - 1)]
+    plt.plot(x, err_vel, 'r', label = "Velocity differentiation error")
+    plt.title("Differentiation error of velocity")
+    plt.xlabel("t[s]")
+    plt.ylabel("dV[m/s]")
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+    plt.plot(x, err_acc, 'r', label = "Acceleration differentiation error")
+    plt.title("Differentiation error of acceleration")
+    plt.xlabel("t[s]")
+    plt.ylabel("da[m/s^2]")
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+
+
 
 
 

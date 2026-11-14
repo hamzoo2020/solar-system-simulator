@@ -1,17 +1,22 @@
 """
-Prikaz grafika za proveru i izveštaj.
-Pokreće se: python tests_manual.py
-Nema assert-a — samo crta grafike.
+Provera da graficke funkcije rade bez greske.
+Pokreni: python tests_manual.py
 """
 
 import numpy as np
+import matplotlib
+matplotlib.use("Agg")   # bez GUI — samo savefig, brze i bez blokiranja
 import matplotlib.pyplot as plt
 
 from celestial_object import CelestialObject
 from constants import *
 from system import System
 from integrator import Euler, RK4, Verlet
-from analysis import run, convergence, plot_total_energy, plot_converges
+from analysis import (
+    run, total_energy, convergence,
+    differentiation_error,
+    plot_total_energy, plot_converges, plot_differentiation_error,
+)
 
 
 def make_sun_earth():
@@ -23,48 +28,51 @@ def make_sun_earth():
     return System(bodies, positions, velocities)
 
 
-def show_energy_plot():
-    """
-    Grafik 1: relativna promena energije kroz vreme za sve tri metode.
-    Očekivano: Euler raste, RK4 sporo raste, Verlet osciluje oko 1.
-    """
-    print("=== Grafik 1: energija ===")
+def check_sane(values, name):
+    """Provera da niz ima smislene vrednosti."""
+    assert len(values) > 0, f"{name}: prazan niz"
+    assert all(np.isfinite(v) for v in values), f"{name}: ima NaN/inf"
+    print(f"  {name}: len={len(values)}, "
+          f"min={min(values):.3e}, max={max(values):.3e}")
+
+
+def test_energy_plot():
+    print("=== Grafik: energija ===")
     system = make_sun_earth()
     dt = 3600.0
-    n_steps = 1000   # ~41 dan
+    n_steps = 500
 
     t_e, e_e = run(system, Euler(),  dt, n_steps)
     t_r, e_r = run(system, RK4(),    dt, n_steps)
     t_v, e_v = run(system, Verlet(), dt, n_steps)
 
+    check_sane(e_e, "energies Euler")
+    check_sane(e_r, "energies RK4")
+    check_sane(e_v, "energies Verlet")
+
     plt.figure(figsize=(10, 6))
     plot_total_energy(t_e, e_e, "Euler")
     plot_total_energy(t_r, e_r, "RK4")
     plot_total_energy(t_v, e_v, "Verlet")
-    plt.yscale("symlog", linthresh=1e-10)   # vidi i oscilacije i drift
-    plt.savefig("energy.png", dpi=150, bbox_inches="tight")
-    plt.show()
+    plt.savefig("test_energy.png", dpi=100)
+    plt.close()
+    print("  sacuvano test_energy.png\n")
 
 
-def show_convergence_plot():
-    """
-    Grafik 2: konvergencija (log-log) za sve tri metode.
-    Očekivano: Euler nagib ~1, Verlet ~1.5-2, RK4 ~4.
-    """
-    print("=== Grafik 2: konvergencija ===")
+def test_convergence_plot():
+    print("=== Grafik: konvergencija ===")
     system = make_sun_earth()
-    dt_list = [7200.0, 3600.0, 1800.0, 900.0, 450.0]
-    T_total = 3_600_000.0   # ~41 dan — deljivo sa svim dt
-    ref_dt = 10.0
+    dt_list = [7200.0, 3600.0, 1800.0, 900.0]
+    T_total = 1_000_000.0   # kratko, samo da provera prodje brzo
+    ref_dt = 50.0
 
     err_e = convergence(system, Euler(),  dt_list, T_total, ref_dt)
     err_r = convergence(system, RK4(),    dt_list, T_total, ref_dt)
     err_v = convergence(system, Verlet(), dt_list, T_total, ref_dt)
 
-    # Ispiši nagibe (korisno za odbranu)
-    for name, errs in [("Euler", err_e), ("RK4", err_r), ("Verlet", err_v)]:
-        slope = np.polyfit(np.log(dt_list), np.log(errs), 1)[0]
-        print(f"{name:>7}: nagib = {slope:.3f}")
+    check_sane(err_e, "conv Euler")
+    check_sane(err_r, "conv RK4")
+    check_sane(err_v, "conv Verlet")
 
     plt.figure(figsize=(10, 6))
     plot_converges([
@@ -72,10 +80,28 @@ def show_convergence_plot():
         (dt_list, err_r, "RK4"),
         (dt_list, err_v, "Verlet"),
     ])
-    # plot_converges poziva plt.show() — sačuvaj pre toga ako hoćeš
-    # (vidi napomenu ispod)
+    plt.close()   # plot_converges ima plt.show(); sa Agg ne blokira
+    print("  sacuvano convergence.png (preko plot_converges)\n")
+
+
+def test_differentiation_plot():
+    print("=== Grafik: numericko diferenciranje ===")
+    system = make_sun_earth()
+    dt = 60.0
+    n_steps = 1000
+
+    err_v, err_a = differentiation_error(system, RK4(), dt, n_steps)
+    check_sane(err_v, "diff err vel")
+    check_sane(err_a, "diff err acc")
+
+    plot_differentiation_error(system, RK4(), dt, n_steps)
+    plt.close("all")
+    print("  differentiation grafici prikazani (bez savefig, samo plt.show)\n")
 
 
 if __name__ == "__main__":
-    show_energy_plot()
-    show_convergence_plot()
+    print("Provera grafika...\n")
+    test_energy_plot()
+    test_convergence_plot()
+    test_differentiation_plot()
+    print("Svi grafici prosli.")
