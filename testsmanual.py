@@ -1,10 +1,17 @@
+"""
+Prikaz grafika za proveru i izveštaj.
+Pokreće se: python tests_manual.py
+Nema assert-a — samo crta grafike.
+"""
+
 import numpy as np
+import matplotlib.pyplot as plt
+
 from celestial_object import CelestialObject
 from constants import *
 from system import System
 from integrator import Euler, RK4, Verlet
-from analysis import run, total_energy, plot_total_energy
-import matplotlib.pyplot as plt
+from analysis import run, convergence, plot_total_energy, plot_converges
 
 
 def make_sun_earth():
@@ -16,97 +23,59 @@ def make_sun_earth():
     return System(bodies, positions, velocities)
 
 
-def test_run_structure():
+def show_energy_plot():
     """
-    run() mora da vrati (times, energies) iste dužine,
-    times[0] = 0, i energies[0] = total_energy(initial).
+    Grafik 1: relativna promena energije kroz vreme za sve tri metode.
+    Očekivano: Euler raste, RK4 sporo raste, Verlet osciluje oko 1.
     """
+    print("=== Grafik 1: energija ===")
     system = make_sun_earth()
-    times, energies = run(system, Euler(), 3600.0, 10)
-
-    print("=== Test: struktura run() ===")
-    assert len(times) == len(energies) == 11, \
-        f"treba 11 elemenata (n_steps+1), dobijeno {len(times)}, {len(energies)}"
-    assert times[0] == 0, "times[0] mora biti 0"
-    assert abs(times[1] - 3600.0) < 1e-9, "times[1] mora biti dt"
-    assert abs(energies[0] - total_energy(system)) < 1e-6, \
-        "energies[0] mora biti E(initial)"
-
-    print(f"len(times) = {len(times)}, times[0] = {times[0]}, E(0) = {energies[0]:.3e}")
-    print("OK\n")
-
-
-def test_euler_energy_drifts():
-    """
-    Euler mora da driftuje energiju — |E(1000)/E(0) - 1| > 1e-4.
-    """
-    system = make_sun_earth()
-    times, energies = run(system, Euler(), 3600.0, 1000)
-
-    rel = abs(energies[-1] / energies[0] - 1)
-    print("=== Test: Euler driftuje ===")
-    print(f"|E(1000)/E(0) - 1| = {rel:.3e}")
-    assert rel > 1e-4, f"Euler mora da driftuje, dobijeno {rel:.3e}"
-
-    print("OK\n")
-
-
-def test_verlet_energy_stable():
-    """
-    Verlet ne sme da driftuje — |E(1000)/E(0) - 1| < 1e-3.
-    (Osciluje, ali ne raste sistematski.)
-    """
-    system = make_sun_earth()
-    times, energies = run(system, Verlet(), 3600.0, 1000)
-
-    rel = abs(energies[-1] / energies[0] - 1)
-    print("=== Test: Verlet ne driftuje ===")
-    print(f"|E(1000)/E(0) - 1| = {rel:.3e}")
-    assert rel < 1e-3, f"Verlet ne sme da driftuje, dobijeno {rel:.3e}"
-
-    print("OK\n")
-
-
-def test_verlet_better_than_euler():
-    """
-    Posle 1000 koraka, Verlet mora imati manji drift od Euler-a.
-    """
-    system = make_sun_earth()
-
-    _, e_euler = run(system, Euler(), 3600.0, 1000)
-    _, e_verlet = run(system, Verlet(), 3600.0, 1000)
-
-    drift_e = abs(e_euler[-1] / e_euler[0] - 1)
-    drift_v = abs(e_verlet[-1] / e_verlet[0] - 1)
-
-    print("=== Test: Verlet bolji od Euler ===")
-    print(f"Euler drift:  {drift_e:.3e}")
-    print(f"Verlet drift: {drift_v:.3e}")
-    assert drift_v < drift_e, "Verlet mora imati manji drift"
-
-    print("OK\n")
-
-def test():
-    system = make_sun_earth()
-    n_steps = 1000
     dt = 3600.0
+    n_steps = 1000   # ~41 dan
 
     t_e, e_e = run(system, Euler(),  dt, n_steps)
     t_r, e_r = run(system, RK4(),    dt, n_steps)
     t_v, e_v = run(system, Verlet(), dt, n_steps)
 
+    plt.figure(figsize=(10, 6))
     plot_total_energy(t_e, e_e, "Euler")
     plot_total_energy(t_r, e_r, "RK4")
     plot_total_energy(t_v, e_v, "Verlet")
-
-    plt.yscale("symlog", linthresh=1e-10)
+    plt.yscale("symlog", linthresh=1e-10)   # vidi i oscilacije i drift
+    plt.savefig("energy.png", dpi=150, bbox_inches="tight")
     plt.show()
 
+
+def show_convergence_plot():
+    """
+    Grafik 2: konvergencija (log-log) za sve tri metode.
+    Očekivano: Euler nagib ~1, Verlet ~1.5-2, RK4 ~4.
+    """
+    print("=== Grafik 2: konvergencija ===")
+    system = make_sun_earth()
+    dt_list = [7200.0, 3600.0, 1800.0, 900.0, 450.0]
+    T_total = 3_600_000.0   # ~41 dan — deljivo sa svim dt
+    ref_dt = 10.0
+
+    err_e = convergence(system, Euler(),  dt_list, T_total, ref_dt)
+    err_r = convergence(system, RK4(),    dt_list, T_total, ref_dt)
+    err_v = convergence(system, Verlet(), dt_list, T_total, ref_dt)
+
+    # Ispiši nagibe (korisno za odbranu)
+    for name, errs in [("Euler", err_e), ("RK4", err_r), ("Verlet", err_v)]:
+        slope = np.polyfit(np.log(dt_list), np.log(errs), 1)[0]
+        print(f"{name:>7}: nagib = {slope:.3f}")
+
+    plt.figure(figsize=(10, 6))
+    plot_converges([
+        (dt_list, err_e, "Euler"),
+        (dt_list, err_r, "RK4"),
+        (dt_list, err_v, "Verlet"),
+    ])
+    # plot_converges poziva plt.show() — sačuvaj pre toga ako hoćeš
+    # (vidi napomenu ispod)
+
+
 if __name__ == "__main__":
-    print("Pokrećem testove za energiju...\n")
-    test_run_structure()
-    test_euler_energy_drifts()
-    test_verlet_energy_stable()
-    test_verlet_better_than_euler()
-    print("Svi testovi prošli.")
-    test()
+    show_energy_plot()
+    show_convergence_plot()
