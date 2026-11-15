@@ -43,7 +43,7 @@ The project is modular and separates the physical model, numerical methods, and 
 | `system.py` | `System` class that stores the current state (positions and velocities) and contains `accelerations()`, which computes gravitational acceleration for all bodies (N-body model). |
 | `integrator.py` | Euler, RK4, and Verlet classes with a common `step()` method. |
 | `analysis.py` | Functions for numerical analysis (energy, convergence, numerical differentiation, and plotting). |
-| `vizualization.py` | Functions for 2D orbit plotting (Matplotlib) and the interactive 3D animation (VPython). |
+| `visualization.py` | Functions for 2D orbit plotting (Matplotlib) and the interactive 3D animation (VPython). |
 
 ## Installation and Usage
 
