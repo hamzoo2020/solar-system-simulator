@@ -3,7 +3,7 @@ from constants import *
 from system import System
 from integrator import Euler, RK4, Verlet
 import numpy as np
-from vizualization import (plot_orbits_2d)
+from vizualization import (plot_orbits_2d, run_3d_visualization)
 
 def build_solar_system():
     bodies = [
@@ -30,25 +30,16 @@ def build_solar_system():
         NEPTUNE_VELOCITY
     ])
     return System(bodies, positions, velocities)
+
 def main():
+    '''plot_orbits_2d(initial_system, verlet, dt, 40000)''' #idelan odnos brzine izvrsavanja i preglednosti n = 40000, za n = 400000 treba jedno 10min da se ucita
     initial_system = build_solar_system()
     rk4 = RK4()
-    dt = 3600.0
-    n_steps = int(86400 / dt)
-    current = initial_system
-    for _ in range(n_steps):
-        current = rk4.step(current, dt)
-    verlet = Verlet()
     euler = Euler()
-    #test
-    print("\n=== Posle 1 dana ===")
-    for i, body in enumerate(current.bodies):
-        r0 = np.linalg.norm(initial_system.positions[i])
-        r1 = np.linalg.norm(current.positions[i])
-        drift = abs(r1 - r0) / r0 * 100
-        print(f"{body.name:>8}: |r| = {r1/AU:.3f} AU, drift = {drift:.6f}%")
-
-    plot_orbits_2d(initial_system, verlet, dt, 40000) #idelan odnos brzine izvrsavanja i preglednosti n = 40000, za n = 400000 treba jedno 10min da se ucita
+    verlet = Verlet()
+    dt = 3600.00
+    #plot_orbits_2d(initial_system, rk4, dt, 4000)
+    run_3d_visualization(initial_system, verlet, dt, n_steps_per_frame=10)
 
 if __name__ == '__main__':
     main() 

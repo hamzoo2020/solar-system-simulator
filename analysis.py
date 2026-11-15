@@ -33,12 +33,14 @@ def plot_total_energy(times, energies, name):
     if name == "Euler": c = 'r'
     elif name == "RK4": c = 'b'
     elif name == "Verlet": c = 'g'
-    plt.plot(x, y, c, label = name)
+    plt.plot(times, [e / energies[0] - 1 for e in energies], label=name)
     plt.title(f"Graph of deviation of energy over time")
     plt.xlabel("dt[s]")
-    plt.ylabel("E[t]/E[0]")
+    plt.ylabel("E[t]/E[0] - 1")
     plt.legend()
     plt.grid(True)
+    plt.show()
+    plt.close()
 
 
 def convergence(system, method, dt_list, T_total, ref_dt):
@@ -68,19 +70,16 @@ def convergence(system, method, dt_list, T_total, ref_dt):
 
 
 def plot_converges(series):
-    x = series[0][0]
-    y1 = series[0][1]
-    y2 = series[1][1]
-    y3 = series[2][1]
-    plt.loglog(x, y1, 'r', label = series[0][2])
-    plt.loglog(x, y2, 'b', label = series[1][2])
-    plt.loglog(x, y3, 'g', label = series[2][2])
+    plt.figure(figsize=(10, 6))
+    for dt_list, errors, label in series:
+        plt.loglog(dt_list, errors, 'o-', label=label)
     plt.title(f"Graph of convergence")
     plt.xlabel("dt[s]")
     plt.ylabel("Error[m]")
-    plt.grid(True)
+    plt.grid(True, which="both")
     plt.legend()
     plt.show()
+    plt.close()
 
 def numerical_velocity(system, method, dt, n_steps):
     positions_list = []
@@ -147,6 +146,7 @@ def plot_differentiation_error(system, method, dt, n_steps):
     plt.legend()
     plt.grid(True)
     plt.show()
+    plt.close()
 
 def plot_error_vs_h(system, method, dt_list, n_steps):
     error_acc_mean = []
@@ -179,6 +179,7 @@ def plot_error_vs_h(system, method, dt_list, n_steps):
     plt.grid(True)
     plt.legend()
     plt.show()
+    plt.close()
 
 
 
