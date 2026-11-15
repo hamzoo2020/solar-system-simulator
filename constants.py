@@ -7,10 +7,6 @@ SUN_MASS = 1.98847e30
 SUN_POSITIONS = np.array([0, 0, 0])
 SUN_VELOCITY = np.array([0, 0, 0])
 
-# Heliocentrične koordinate i brzine planeta
-# Epoha: 2026-11-11 00:00
-# Referentni sistem: ekliptika J2000, ishodište u centru Sunca
-# Jedinice: pozicija [m], brzina [m/s], masa [kg]
 INITIAL_DATE = "2026-11-11T00:00:00"
 
 MERCURY_MASS = 3.3011e23
