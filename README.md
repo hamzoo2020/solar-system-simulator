@@ -65,17 +65,11 @@ On Windows (PowerShell):
 ```powershell
 python -m venv .venv
 .venv\Scripts\Activate.ps1
-pip install -r requirements.txt
+pip install numpy matplotlib vpython
 ```
 
 > If PowerShell blocks the activation script, run
 > `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` first.
-
-If there is no `requirements.txt`, install the libraries manually:
-
-```bash
-pip install numpy matplotlib vpython
-```
 
 ### 3. Run the simulation
 
