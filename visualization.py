@@ -22,7 +22,7 @@ def plot_orbits_2d(system, method, dt, n_steps):
         ys = [pos[i][1] / AU for pos in positions_history]
         xt = xs[len(xs) - 1]
         yt = ys[len(ys) - 1]
-        plt.plot(xs, ys, color=colors[i], label=body.name + " path", linewidth=1) #linewidth 1 ili 2
+        plt.plot(xs, ys, color=colors[i], label=body.name + " path", linewidth=1) 
         plt.plot(xt, yt, 'o', color=colors[i], markersize=3, label=body.name)
 
     plt.xlabel("x[AU]")
@@ -69,7 +69,6 @@ def run_3d_visualization(system, method, dt, n_steps_per_frame=1):
         pos = system.positions[i] / AU * AU_TO_VPY
         vpy_bodies[i].pos = vector(pos[0], pos[1], pos[2])
 
-    # --- CALLBACK FUNKCIJE ---
     def toggle_play(b):
         state["running"] = not state["running"]
         b.text = "Play" if not state["running"] else "Pause"
@@ -82,44 +81,35 @@ def run_3d_visualization(system, method, dt, n_steps_per_frame=1):
         btn_play.text = "Play"
         
         t, e = run(state["current_system"], method, dt, 500)
-        plot_total_energy(t, e, "Energija")  # Ovo sada otvara plt.show() u analysis.py
+        plot_total_energy(t, e, "Energija")
 
     def show_convergence(b):
         state["running"] = False
         btn_play.text = "Play"
         
-        # Kratko trajanje i manje tacan ref_dt za brzinu
         dt_list = [3600.0, 1800.0, 900.0]
-        T_total = 10000.0   # ~2.8 sati (brzo se racuna)
+        T_total = 10000.0
         ref_dt = 100.0      
         
         err_e = convergence(state["current_system"], Euler(), dt_list, T_total, ref_dt)
         err_r = convergence(state["current_system"], RK4(),   dt_list, T_total, ref_dt)
         err_v = convergence(state["current_system"], Verlet(),dt_list, T_total, ref_dt)
         
-        # Saljemo sva tri para
-        plot_converges([
-            (dt_list, err_e, "Euler"),
-            (dt_list, err_r, "RK4"),
-            (dt_list, err_v, "Verlet"),
-        ])
+        plot_converges([(dt_list, err_e, "Euler"), (dt_list, err_r, "RK4"),(dt_list, err_v, "Verlet")])
 
     def show_diff_error(b):
         state["running"] = False
         btn_play.text = "Play"
         
         err_v, err_a = differentiation_error(state["current_system"], method, dt, 500)
-        # Pretpostavka je da plot_differentiation_error prima ove parametre i crta
         plot_differentiation_error(state["current_system"], method, dt, 500)
 
 
-    # --- KREIRANJE GUI ELEMENATA (ispod scene) ---
     scene.append_to_caption("\n\n") 
     
     btn_play = button(text="Pause", bind=toggle_play)
     scene.append_to_caption("   Brzina: ")
     sl = slider(min=0.1, max=20.0, value=1.0, step=0.1, bind=change_speed, length=200)
-    # IZBACILI SMO speed_label POTPUNO
     
     scene.append_to_caption("\n\n")
     btn_energy = button(text="Grafik Energije", bind=show_energy)
@@ -135,14 +125,12 @@ def run_3d_visualization(system, method, dt, n_steps_per_frame=1):
         if not state["running"]:
             continue
             
-        # Racunamo koliko koraka treba napraviti
         steps_to_take = int(n_steps_per_frame * state["speed"])
         
-        # Zastita: uvek napravi barem 1 korak da se ne bi zamrznuo
         if steps_to_take < 1:
             steps_to_take = 1
             
-        for _ in range(steps_to_take):
+        for i in range(steps_to_take):
             state["current_system"] = method.step(state["current_system"], dt)
             
         for i in range(len(system.bodies)):

@@ -3,7 +3,7 @@ from constants import *
 from system import System
 from integrator import Euler, RK4, Verlet
 import numpy as np
-from vizualization import (plot_orbits_2d, run_3d_visualization)
+from visualization import (plot_orbits_2d, run_3d_visualization)
 
 def build_solar_system():
     bodies = [
@@ -38,7 +38,6 @@ def main():
     euler = Euler()
     verlet = Verlet()
     dt = 3600.00
-    #plot_orbits_2d(initial_system, rk4, dt, 4000)
     run_3d_visualization(initial_system, verlet, dt, n_steps_per_frame=10)
 
 if __name__ == '__main__':
